@@ -27,8 +27,9 @@ const impressA=(n,l)=>track('content_list_view',{list_name:n,items_count:l.lengt
 const impressP=(n,l)=>ecom('view_item_list',{item_list_id:n,item_list_name:n,items:l.map((p,i)=>it(p,1,{index:i,item_list_id:n,item_list_name:n}))});
 /* ---------- CONSENT (default set BEFORE any tag loads) ---------- */
 const gmap=c=>{const g=v=>v?'granted':'denied';return{analytics_storage:g(c.analytics),ad_storage:g(c.marketing),ad_user_data:g(c.marketing),ad_personalization:g(c.marketing),personalization_storage:g(c.personalization),functionality_storage:'granted',security_storage:'granted'}};
-gtag('consent','default',Object.assign(gmap({}),{wait_for_update:500}));
-let cons=S.g('consent',null);if(cons)gtag('consent','update',gmap(cons));
+const PRE=window.__NOVA_CONSENT;window.__NOVA_CONSENT=1; /* loader.js normally already pushed the defaults before any GTM snippet */
+if(!PRE)gtag('consent','default',Object.assign(gmap({}),{wait_for_update:500}));
+let cons=S.g('consent',null);if(cons&&!PRE)gtag('consent','update',gmap(cons));
 if(/^GTM-[A-Z0-9]{4,}$/.test(CFG.gtmId)&&CFG.gtmId!=='GTM-XXXXXXX'&&!PROBE&&!document.querySelector('script[src*="googletagmanager.com/gtm.js"]')){
  dl.push({'gtm.start':Date.now(),event:'gtm.js'});const s=document.createElement('script');s.async=true;s.src='https://www.googletagmanager.com/gtm.js?id='+CFG.gtmId;document.head.appendChild(s);
  document.body.insertAdjacentHTML('afterbegin',`<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=${CFG.gtmId}" height="0" width="0" style="display:none"></iframe></noscript>`)}
