@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>NOVA Code Editor</title>
+<style>
+*{box-sizing:border-box}html,body{height:100%;margin:0}body{display:flex;flex-direction:column;background:#1e1e1e;color:#ddd;font:13px system-ui,sans-serif}
+#tb{display:flex;gap:8px;align-items:center;padding:8px 12px;background:#333;flex-wrap:wrap}#tb a{color:#9cdcfe}button{background:#0e639c;color:#fff;border:0;padding:6px 12px;border-radius:3px;cursor:pointer;font:inherit}button.s{background:#555}button.d{background:#a1260d}button[hidden]{display:none}
+#st{margin-left:auto;font-weight:600}.dirty{color:#f0b429}.saved{color:#6fcf97}.none{color:#aaa}
+#mid{flex:1;display:grid;grid-template-columns:230px 1fr;min-height:0}#files{overflow:auto;background:#252526;padding:6px}#files div{padding:4px 6px;cursor:pointer;word-break:break-all}#files div.on{background:#37373d}#files b{display:block;margin:8px 0 2px;color:#888;font-size:11px;text-transform:uppercase}
+#ed{display:flex;flex-direction:column;min-width:0;min-height:0}#fn{display:none}#msg{padding:4px 10px;min-height:22px}.err{color:#f48771}.warn{color:#f0b429}.ok{color:#6fcf97}
+
+details{background:#252526;border-top:1px solid #444;padding:6px 12px}summary{cursor:pointer;font-weight:600}table{border-collapse:collapse;margin:6px 0}td,th{padding:3px 10px;text-align:left;border-bottom:1px solid #333}input{font:inherit}
+@media(max-width:800px){#mid{grid-template-columns:1fr}#files{max-height:140px}}
+
+:root{--fs:13px;--lh:20px}.mono{font-family:Consolas,'SF Mono',Menlo,'Courier New',monospace;font-size:var(--fs);line-height:var(--lh);tab-size:2;font-variant-ligatures:none;letter-spacing:0}
+#tabsb{display:flex;background:#252526;overflow-x:auto;min-height:34px}.tab{display:flex;align-items:center;gap:8px;padding:0 12px;background:#2d2d2d;color:#aaa;cursor:pointer;border-right:1px solid #1e1e1e;white-space:nowrap;border-top:2px solid transparent}.tab.on{background:#1e1e1e;color:#fff;border-top-color:#0e8cff}.tab i{font-style:normal;opacity:.7;padding:0 3px;border-radius:3px}.tab i:hover{background:#444;opacity:1}
+#ew{flex:1;display:flex;min-height:0;background:#1e1e1e}#gut{width:56px;flex:none;overflow:hidden;background:#1e1e1e;color:#858585;text-align:right;user-select:none;border-right:1px solid #2b2b2b}#gn{padding:8px 12px 0 0;white-space:pre}
+#cw{position:relative;flex:1;overflow:hidden}#curline{position:absolute;left:0;right:0;height:var(--lh);background:#ffffff10;pointer-events:none}
+#hl{position:absolute;top:0;left:0;margin:0;padding:8px 12px;white-space:pre;pointer-events:none;color:#d4d4d4;will-change:transform}
+#ta{position:absolute;inset:0;width:100%;height:100%;margin:0;padding:8px 12px;border:0;outline:0;resize:none;background:transparent;color:transparent;caret-color:#fff;white-space:pre;overflow:auto}#ta::selection{background:rgba(38,100,180,.55)}
+#sb{display:flex;gap:16px;align-items:center;background:#0e639c;color:#fff;padding:2px 12px;font-size:12px}#sb button{padding:0 8px;background:#ffffff30}#sb .r{margin-left:auto;display:flex;gap:6px;align-items:center}
+#fb{display:flex;gap:6px;align-items:center;padding:6px 10px;background:#252526;flex-wrap:wrap}#fb[hidden]{display:none}#fb input{background:#3c3c3c;color:#ddd;border:1px solid #555;padding:3px 6px}#fb button{padding:3px 8px}
+#cm{position:absolute;visibility:hidden;white-space:pre}.c{color:#6a9955}.s{color:#ce9178}.rx{color:#d16969}.n{color:#b5cea8}.k{color:#569cd6}.k2{color:#4fc1ff}.f{color:#dcdcaa}.a{color:#9cdcfe}.sel{color:#d7ba7d}
+</style></head><body>
+<div id="tb"><b>NOVA Code Editor</b><a id="back" href="../index.html">← Back to website</a>
+<button id="save" hidden>Save changes</button><button id="reset" class="d" title="Restore ALL code to the original state">Reset to original</button><button id="exp" class="s">Export</button><button id="impb" class="s">Import</button><input type="file" id="imp" accept=".json" hidden><span id="st"></span></div>
+<div id="mid"><nav id="files" aria-label="Files"></nav><section id="ed"><div id="tabsb"></div><div id="fn" hidden></div><div id="msg" role="status"></div><div id="fb" hidden><input id="fq" placeholder="Find" aria-label="Find"><button class="s" id="fpv" title="Previous (Shift+Enter)">↑</button><button class="s" id="fnx" title="Next (Enter)">↓</button><span id="fc"></span><input id="fr" placeholder="Replace" aria-label="Replace"><button class="s" id="frp">Replace</button><button class="s" id="fra">Replace all</button><button class="s" id="fx">✕</button></div>
+<div id="ew"><div id="gut" class="mono"><div id="gn"></div></div><div id="cw"><div id="curline"></div><pre id="hl" class="mono" aria-hidden="true"></pre><textarea id="ta" class="mono" spellcheck="false" aria-label="Code editor"></textarea><span id="cm" class="mono">0000000000</span></div></div>
+<div id="sb"><span id="sp">Ln 1, Col 1</span><span>Spaces: 2</span><span>UTF-8</span><span id="sl">HTML</span><span class="r"><span>Ctrl/Cmd+S save · +F find · +/ comment · Tab indent</span><button id="fdn" title="Smaller">A−</button><button id="fup" title="Larger">A+</button></span></div></section></div>
+<details id="tp"><summary>Tracking &amp; Pixels</summary>
+<p class="warn">⚠ Enabled scripts run on the real site pages with full page access and may send data to third parties. Only use code you trust. Saved only in this browser — not deployed.</p>
+<label>GTM container ID <input id="gtm" placeholder="GTM-XXXXXXX" size="16"></label> <small>(placeholder IDs are ignored)</small>
+<table id="reg"></table>
+<div>Insert preset into the selected tracking file: <button class="s" data-p="gtm">GTM head</button> <button class="s" data-p="gtmb">GTM noscript</button> <button class="s" data-p="meta">Meta Pixel</button> <button class="s" data-p="tt">TikTok</button> <button class="s" data-p="li">LinkedIn</button> <button class="s" data-p="cj">Custom JS</button> <button class="s" data-p="ga4">GA4 note</button></div></details>
+<script src="sources.js"></script>
+<script>
+(()=>{'use strict';
+const $=s=>document.querySelector(s),BASE=new URL('../',location.href),K='nova.studio',PRO=new URLSearchParams(location.search).get('page')||'index.html';
+const FILES=['assets/css/styles.css','assets/js/config.js','assets/js/app.js','tracking/head-scripts.html','tracking/body-scripts.html','tracking/pixels.html','tracking/custom-tracking.js'];
+const TRK={'tracking/head-scripts.html':['Head scripts','head',1],'tracking/pixels.html':['Third-party pixels','head',2],'tracking/body-scripts.html':['Body / noscript','body',3],'tracking/custom-tracking.js':['Custom JS','body',4]};
+const PK='page:'+PRO,M={};let cur='',D={html:{},files:{},enabled:{},gtm:''},metaDirty=false;
+try{D=Object.assign(D,JSON.parse(localStorage.getItem(K)||'{}'))}catch(e){}D.html=D.html||{};D.files=D.files||{};D.enabled=D.enabled||{};
+let bundled=false;const get=async p=>{try{const r=await fetch(new URL(p,BASE),{cache:'no-store'});if(!r.ok)throw new Error(p+' → HTTP '+r.status);return await r.text()}catch(e){if(window.NOVA_SOURCES&&NOVA_SOURCES[p]!=null){bundled=true;return NOVA_SOURCES[p]}throw e}};
+const msg=(t,c)=>{$('#msg').className=c||'';$('#msg').textContent=t||''};
+const dirty=()=>metaDirty||Object.values(M).some(m=>m.cur!==m.saved),custom=()=>Object.values(M).some(m=>m.saved!==m.orig)||D.gtm||Object.keys(D.enabled).length;
+function status(){const d=dirty();$('#save').hidden=!d;$('#st').className=d?'dirty':custom()?'saved':'none';$('#st').textContent=d?'● Unsaved changes':custom()?'Saved edits are active on the site':'Original code — no changes'}
+function list(){const nm=k=>k===PK?'Current page HTML — '+PRO:k;$('#files').innerHTML='<b>This page</b>'+r(PK)+'<b>Shared code</b>'+FILES.map(k=>r(k)).join('');
+ function r(k){return`<div data-k="${k}" class="${k===cur?'on':''}">${M[k]&&M[k].cur!==M[k].orig?'● ':''}${nm(k)}</div>`}
+ $('#files').querySelectorAll('div').forEach(d=>d.onclick=()=>open(d.dataset.k));renderTabs()}
+function open(k){if(cur&&M[cur])M[cur].cur=$('#ta').value;cur=k;if(!openList.includes(k))openList.push(k);$('#ta').value=M[k].cur;$('#ta').scrollTop=0;$('#ta').scrollLeft=0;$('#fn').textContent=k===PK?'Current page HTML — '+PRO+' (rendered markup)':k;
+ msg(k===PK?'Edits to page HTML are saved as a static snapshot for this exact URL. Cart/checkout/order data on that page will no longer update until you Reset. Search/list widgets need their ids kept.':'', k===PK?'warn':'');list();syntax();trkWarn()}
+function syntax(){if(!cur.endsWith('.js'))return true;try{new Function(M[cur].cur);return true}catch(e){msg('Syntax error: '+e.message,'err');return false}}
+$('#ta').oninput=()=>{M[cur].cur=$('#ta').value;if(cur.endsWith('.js'))syntax();else msg($('#msg').className==='warn'?$('#msg').textContent:'','warn');status();list()};
+$('#save').onclick=()=>{M[cur].cur=$('#ta').value;for(const k in M)if(k.endsWith('.js')&&M[k].cur!==M[k].saved){try{new Function(M[k].cur)}catch(e){open(k);msg('Not saved — syntax error in '+k+': '+e.message,'err');return}}
+ for(const k in M){const m=M[k];m.saved=m.cur;const mod=m.cur!==m.orig;if(k===PK){mod?D.html[PRO]=m.cur:delete D.html[PRO]}else{mod?D.files[k]=m.cur:delete D.files[k]}}
+ localStorage.setItem(K,JSON.stringify(D));metaDirty=false;status();list();msg('Saved. Open the website to see your changes (stored in this browser only; not deployed).','ok');reg()};
+$('#reset').onclick=()=>{if(!confirm('Reset ALL code (page HTML, CSS, JavaScript, tracking scripts, GTM ID) back to the original state? Saved edits will be deleted.'))return;
+ localStorage.removeItem(K);D={html:{},files:{},enabled:{},gtm:''};metaDirty=false;for(const k in M)M[k].cur=M[k].saved=M[k].orig;$('#gtm').value='';$('#ta').value=M[cur].cur;status();list();reg();msg('Everything restored to the original code.','ok')};
+$('#exp').onclick=()=>{M[cur].cur=$('#ta').value;const o={app:'nova-living-studio',version:2,gtm:D.gtm,enabled:D.enabled,html:{[PRO]:M[PK].cur},files:Object.fromEntries(FILES.map(k=>[k,M[k].cur]))},a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(o,null,2)],{type:'application/json'}));a.download='nova-living-export.json';a.click()};
+$('#impb').onclick=()=>$('#imp').click();
+$('#imp').onchange=async e=>{try{const j=JSON.parse(await e.target.files[0].text());if(j.app!=='nova-living-studio')throw new Error('not a NOVA export');for(const k in(j.files||{}))if(M[k])M[k].cur=j.files[k];if(j.html&&j.html[PRO]!=null)M[PK].cur=j.html[PRO];D.enabled=j.enabled||{};D.gtm=j.gtm||'';$('#gtm').value=D.gtm;metaDirty=true;$('#ta').value=M[cur].cur;list();status();reg();msg('Imported — review and click Save changes.','warn')}catch(x){msg('Import failed: '+x.message,'err')}};
+/* ---- editor engine: syntax highlight, gutter, tabs, find, shortcuts (no dependencies) ---- */
+const ta=$('#ta'),hl=$('#hl'),gn=$('#gn'),cl=$('#curline'),HLD=Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value');
+let fs=+(localStorage.getItem('nova.studio.fs')||13),lh=20,openList=[],nLines=0;
+const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'),sp=(c,t)=>t?(c?`<span class="${c}">${esc(t)}</span>`:esc(t)):'';
+const langOf=k=>k===PK||k.endsWith('.html')?'html':k.endsWith('.css')?'css':'js',LN={html:'HTML',css:'CSS',js:'JavaScript'};
+function tok(t,re,cls){let o='',l=0,m;re.lastIndex=0;while((m=re.exec(t))){if(!m[0]){re.lastIndex++;continue}if(m.index>l)o+=esc(t.slice(l,m.index));let c='';for(let i=1;i<m.length;i++)if(m[i]!==undefined){c=cls[i-1];break}o+=sp(c,m[0]);l=re.lastIndex}return o+esc(t.slice(l))}
+let JSRE;const KW='const|let|var|function|return|if|else|for|while|do|switch|case|break|continue|new|class|extends|async|await|try|catch|finally|throw|typeof|instanceof|in|of|import|export|default|delete|void';
+try{JSRE=new RegExp("(\\/\\/[^\\n]*|\\/\\*[\\s\\S]*?\\*\\/)|('(?:\\\\.|[^'\\\\\\n])*'|\"(?:\\\\.|[^\"\\\\\\n])*\"|`(?:\\\\[\\s\\S]|[^`\\\\])*`)|((?<![\\w)\\]]\\s*)\\/(?![*\\/])(?:\\\\.|\\[(?:\\\\.|[^\\]\\\\\\n])*\\]|[^\\/\\\\\\n\\[])+\\/[gimsuy]*)|\\b(0x[\\da-fA-F]+|\\d+\\.?\\d*)\\b|\\b("+KW+")\\b|\\b(true|false|null|undefined|this|window|document)\\b|([A-Za-z_$][\\w$]*)(?=\\()","g")}catch(e){JSRE=new RegExp("(\\/\\/[^\\n]*|\\/\\*[\\s\\S]*?\\*\\/)|('(?:\\\\.|[^'\\\\\\n])*'|\"(?:\\\\.|[^\"\\\\\\n])*\"|`(?:\\\\[\\s\\S]|[^`\\\\])*`)|(a^)|\\b(0x[\\da-fA-F]+|\\d+\\.?\\d*)\\b|\\b("+KW+")\\b|\\b(true|false|null|undefined|this|window|document)\\b|([A-Za-z_$][\\w$]*)(?=\\()","g")}
+const hlJS=t=>tok(t,JSRE,['c','s','rx','n','k','k2','f']);
+const hlCSS=t=>tok(t,/(\/\*[\s\S]*?\*\/)|("(?:\\.|[^"\\\n])*"|'(?:\\.|[^'\\\n])*')|(@[\w-]+)|([^{}\n;@\/]+(?=\{))|(#[\da-fA-F]{3,8}\b)|(-?\d*\.?\d+(?:px|em|rem|%|vh|vw|s|ms|deg|fr)?)|([\w-]+)(?=\s*:)/g,['c','s','k','sel','n','n','a']);
+const tag=s=>tok(s,/("[^"]*"|'[^']*')|(<\/?[A-Za-z][\w-]*)|([\w:-]+)(?==)|(\/?>)/g,['s','k','a','k']);
+function hlHTML(t){let o='',l=0,m;const re=/<!--[\s\S]*?-->|(<script\b[^>]*>)([\s\S]*?)(<\/script>)|(<style\b[^>]*>)([\s\S]*?)(<\/style>)|<\/?[A-Za-z][^>]*>?/g;
+ while((m=re.exec(t))){o+=esc(t.slice(l,m.index));if(m[0].startsWith('<!--'))o+=sp('c',m[0]);else if(m[1]!==undefined)o+=tag(m[1])+hlJS(m[2])+tag(m[3]);else if(m[4]!==undefined)o+=tag(m[4])+hlCSS(m[5])+tag(m[6]);else o+=tag(m[0]);l=re.lastIndex}return o+esc(t.slice(l))}
+const val=()=>HLD.get.call(ta);
+function setFont(n){fs=Math.max(10,Math.min(24,n));lh=Math.round(fs*1.55);document.documentElement.style.setProperty('--fs',fs+'px');document.documentElement.style.setProperty('--lh',lh+'px');localStorage.setItem('nova.studio.fs',fs);if(cur)refresh()}
+function refresh(){const t=val(),L=langOf(cur||'x.js');hl.innerHTML=(L==='html'?hlHTML(t):L==='css'?hlCSS(t):hlJS(t))+'\n';const n=t.split('\n').length;if(n!==nLines){nLines=n;gn.textContent=Array.from({length:n},(_,i)=>i+1).join('\n')}$('#sl').textContent=LN[L];sync();pos()}
+function sync(){hl.style.transform=`translate(${-ta.scrollLeft}px,${-ta.scrollTop}px)`;gn.style.transform=`translateY(${-ta.scrollTop}px)`;const ln=val().slice(0,ta.selectionStart).split('\n').length-1;cl.style.top=(8+ln*lh-ta.scrollTop)+'px'}
+function pos(){const v=val(),s=ta.selectionStart,e=ta.selectionEnd,ln=v.slice(0,s).split('\n').length,col=s-v.lastIndexOf('\n',s-1);$('#sp').textContent='Ln '+ln+', Col '+col+(e>s?' ('+(e-s)+' selected)':'');sync()}
+Object.defineProperty(ta,'value',{get(){return val()},set(v){HLD.set.call(ta,v);refresh()}});
+ta.addEventListener('input',refresh);ta.addEventListener('scroll',sync);['keyup','click','focus'].forEach(e=>ta.addEventListener(e,pos));document.addEventListener('selectionchange',()=>{if(document.activeElement===ta)pos()});
+ta.setAttribute('wrap','off');ta.setAttribute('autocapitalize','off');ta.setAttribute('autocomplete','off');
+function ins(text,from,to){ta.focus();ta.setSelectionRange(from,to);if(!document.execCommand('insertText',false,text)){HLD.set.call(ta,val().slice(0,from)+text+val().slice(to));ta.setSelectionRange(from+text.length,from+text.length);ta.dispatchEvent(new Event('input'))}}
+function lineRange(){const v=val(),s=ta.selectionStart;let e=ta.selectionEnd;if(e>s&&v[e-1]==='\n')e--;const a=v.lastIndexOf('\n',s-1)+1;let b=v.indexOf('\n',e);if(b<0)b=v.length;return[a,b]}
+function block(fn){const[a,b]=lineRange(),v=val(),r=v.slice(a,b).split('\n').map(fn).join('\n');ins(r,a,b);ta.setSelectionRange(a,a+r.length)}
+function toggleComment(){const L=langOf(cur),[a,b]=lineRange(),ls=val().slice(a,b).split('\n').filter(x=>x.trim()),re=L==='js'?/^(\s*)\/\/ ?/:L==='css'?/^(\s*)\/\* ?(.*?) ?\*\/\s*$/:/^(\s*)<!-- ?(.*?) ?-->\s*$/,all=ls.length&&ls.every(x=>re.test(x));
+ block(x=>{if(!x.trim())return x;if(all)return L==='js'?x.replace(re,'$1'):x.replace(re,'$1$2');const i=x.match(/^\s*/)[0].length;return L==='js'?x.slice(0,i)+'// '+x.slice(i):L==='css'?x.slice(0,i)+'/* '+x.slice(i)+' */':x.slice(0,i)+'<!-- '+x.slice(i)+' -->'})}
+const CL={'(':')','[':']','{':'}','"':'"',"'":"'",'`':'`'},CLOSERS=')]}';
+ta.addEventListener('keydown',e=>{const mod=e.ctrlKey||e.metaKey,k=e.key,v=val(),s=ta.selectionStart,en=ta.selectionEnd;
+ if(mod&&k.toLowerCase()==='s'){e.preventDefault();if(!$('#save').hidden)$('#save').click();return}
+ if(mod&&k.toLowerCase()==='f'){e.preventDefault();openFind();return}
+ if(mod&&k==='/'){e.preventDefault();toggleComment();return}
+ if(mod&&e.shiftKey&&k.toLowerCase()==='d'){e.preventDefault();const[a,b]=lineRange();ins('\n'+v.slice(a,b),b,b);return}
+ if(mod||e.altKey)return;
+ if(k==='Tab'){e.preventDefault();if(s===en&&!e.shiftKey)ins('  ',s,en);else block(x=>e.shiftKey?x.replace(/^(\t|  ?)/,''):'  '+x);return}
+ if(k==='Enter'){e.preventDefault();const ls=v.lastIndexOf('\n',s-1)+1,ind=v.slice(ls,s).match(/^[ \t]*/)[0],p=v[s-1],n=v[en];
+  if(p&&'{(['.includes(p)){const c=CL[p];if(n===c){const t='\n'+ind+'  \n'+ind;ins(t,s,en);ta.setSelectionRange(s+ind.length+3,s+ind.length+3)}else ins('\n'+ind+'  ',s,en)}else ins('\n'+ind,s,en);return}
+ if(k==='Backspace'&&s===en&&s>0&&CL[v[s-1]]&&CL[v[s-1]]===v[s]){e.preventDefault();ins('',s-1,s+1);return}
+ if(CLOSERS.includes(k)&&s===en&&v[s]===k){e.preventDefault();ta.setSelectionRange(s+1,s+1);return}
+ if(CL[k]){const c=CL[k],q=c===k;if(s!==en){e.preventDefault();ins(k+v.slice(s,en)+c,s,en);ta.setSelectionRange(s+1,en+1);return}
+  if(q&&v[s]===k){e.preventDefault();ta.setSelectionRange(s+1,s+1);return}
+  if(q&&(/\w/.test(v[s-1]||'')||/\w/.test(v[s]||'')))return;
+  e.preventDefault();ins(k+c,s,en);ta.setSelectionRange(s+1,s+1)}});
+/* tabs */
+function renderTabs(){const T=$('#tabsb');T.innerHTML=openList.map(k=>`<div class="tab ${k===cur?'on':''}" data-k="${k}" title="${k}"><span>${k===PK?PRO:k.split('/').pop()}</span><i data-x="${k}" title="Close">${M[k]&&M[k].cur!==M[k].saved?'●':'×'}</i></div>`).join('');
+ T.querySelectorAll('.tab').forEach(t=>t.onclick=e=>{const x=e.target.closest('[data-x]');if(x&&openList.length>1){const i=openList.indexOf(x.dataset.x);openList.splice(i,1);if(cur===x.dataset.x)open(openList[Math.max(0,i-1)]);else renderTabs();return}open(t.dataset.k)})}
+/* find / replace */
+let fm=[];const fq=$('#fq'),fr=$('#fr');
+function openFind(){$('#fb').hidden=false;const sel=val().slice(ta.selectionStart,ta.selectionEnd);if(sel&&!sel.includes('\n'))fq.value=sel;fq.focus();fq.select();findAll()}
+function findAll(){const q=fq.value.toLowerCase(),v=val().toLowerCase();fm=[];if(q){let i=0;while((i=v.indexOf(q,i))>-1){fm.push(i);i+=q.length}}$('#fc').textContent=q?fm.length+' found':''}
+function reveal(p){const ln=val().slice(0,p).split('\n').length-1,top=8+ln*lh;if(top<ta.scrollTop+lh||top>ta.scrollTop+ta.clientHeight-lh*2)ta.scrollTop=Math.max(0,top-ta.clientHeight/2);const col=p-val().lastIndexOf('\n',p-1)-1,cw=$('#cm').getBoundingClientRect().width/10,x=col*cw;if(x<ta.scrollLeft||x>ta.scrollLeft+ta.clientWidth-60)ta.scrollLeft=Math.max(0,x-ta.clientWidth/2);sync()}
+function go(d){findAll();if(!fm.length)return;const s=ta.selectionStart,e=ta.selectionEnd;let m=d>0?fm.find(x=>x>=e)??fm[0]:[...fm].reverse().find(x=>x<s)??fm[fm.length-1];ta.setSelectionRange(m,m+fq.value.length);reveal(m);pos()}
+fq.oninput=()=>{findAll();if(fm.length){const m=fm.find(x=>x>=ta.selectionStart)??fm[0];ta.setSelectionRange(m,m+fq.value.length);reveal(m)}};
+fq.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();go(e.shiftKey?-1:1)}if(e.key==='Escape'){$('#fb').hidden=true;ta.focus()}};fr.onkeydown=e=>{if(e.key==='Escape'){$('#fb').hidden=true;ta.focus()}};
+$('#fnx').onclick=()=>go(1);$('#fpv').onclick=()=>go(-1);$('#fx').onclick=()=>{$('#fb').hidden=true;ta.focus()};
+$('#frp').onclick=()=>{const q=fq.value;if(val().slice(ta.selectionStart,ta.selectionEnd).toLowerCase()===q.toLowerCase()&&q)ins(fr.value,ta.selectionStart,ta.selectionEnd);go(1)};
+$('#fra').onclick=()=>{const q=fq.value;if(!q)return;const re=new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'gi'),t=val().replace(re,()=>fr.value);ins(t,0,val().length);findAll()};
+$("#fdn").onclick=()=>setFont(fs-1);$("#fup").onclick=()=>setFont(fs+1);
+document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='s'){e.preventDefault();if(!$('#save').hidden)$('#save').click()}});
+setFont(fs);
+/* tracking panel */
+function reg(){$('#reg').innerHTML='<tr><th>Script<th>File<th>Placement<th>Order<th>Enabled</tr>'+Object.entries(TRK).map(([p,[n,pl,o]])=>`<tr><td>${n}<td>${p}<td>${pl}<td>${o}<td><input type=checkbox data-e="${p}" ${D.enabled[p]?'checked':''}></tr>`).join('');
+ $('#reg').querySelectorAll('input').forEach(i=>i.onchange=()=>{D.enabled[i.dataset.e]=i.checked;metaDirty=true;status()})}
+$('#gtm').oninput=e=>{D.gtm=e.target.value.trim();metaDirty=true;status()};
+const PRE={gtm:['tracking/head-scripts.html',"<!-- Replace GTM-XXXXXXX with YOUR container ID, then enable this script above -->\n<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','GTM-XXXXXXX');<\/script>\n"],gtmb:['tracking/body-scripts.html','<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-XXXXXXX" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>\n'],meta:['tracking/pixels.html',"<!-- Meta Pixel: paste your own base code with YOUR pixel ID -->\n"],tt:['tracking/pixels.html',"<!-- TikTok Pixel: paste your own base code -->\n"],li:['tracking/pixels.html',"<!-- LinkedIn Insight Tag: paste your own snippet -->\n"],cj:['tracking/custom-tracking.js',"dataLayer.push({event:'custom_demo_event',demo:true});\n"],ga4:['tracking/head-scripts.html',"<!-- Recommended: GA4 THROUGH GTM (GA4 tag, trigger on the page_view custom event). Do not also add gtag.js directly or you will double count. -->\n"]};
+document.querySelectorAll('button[data-p]').forEach(b=>b.onclick=()=>{const [f,t0]=PRE[b.dataset.p];open(f);const cv=$('#ta').value,mk={gtm:'googletagmanager.com/gtm.js',gtmb:'googletagmanager.com/ns.html'}[b.dataset.p];
+ if(mk&&cv.includes(mk)){msg('This file already has that GTM snippet — not adding a second one (it would load GTM twice).','err');return}
+ const t=D.gtm?t0.replace(/GTM-XXXXXXX/g,D.gtm):t0;$('#ta').value+=t;$('#ta').oninput();msg('Preset inserted in '+f+'. Replace any placeholder ID, enable it in the table above, then Save.','warn')});
+function trkWarn(){if(!TRK[cur]||cur.endsWith('.js'))return;const v=M[cur].cur,n=(v.match(/googletagmanager\.com\/gtm\.js/g)||[]).length;let w='';
+ if(/GTM-XXXXXXX/.test(v))w='Contains the placeholder GTM-XXXXXXX — the site ignores it. Replace it with your real container ID or delete it.';else if(n>1)w='More than one GTM head snippet in this file — the site skips repeated IDs, but remove the extra to avoid confusion.';if(w)msg(w,'warn')}
+$('#ta').addEventListener('input',trkWarn);
+/* init */
+(async()=>{
+ try{await Promise.all(FILES.map(async k=>{const t=await get(k);M[k]={orig:t,cur:D.files[k]!=null?D.files[k]:t,saved:D.files[k]!=null?D.files[k]:t}}))}catch(e){msg('Could not load source files: '+e.message+'. Start the server INSIDE the nova-living folder and open '+location.origin+'/developer-studio/','err');return}
+ /* original rendered HTML of the current page, read from a hidden probe frame (no tracking runs in it) */
+ try{const got=new Promise((res,rej)=>{const t=setTimeout(()=>rej(new Error('timeout — page did not respond')),8000);addEventListener('message',e=>{if(e.source!==fr.contentWindow||!e.data||e.data.nova!=='gen')return;clearTimeout(t);res(e.data.html)})});
+  var fr=document.createElement('iframe');fr.name='nova-studio-probe';fr.hidden=true;fr.src=new URL(PRO,BASE).href;document.body.appendChild(fr);
+  const g=await got;if(!g)throw new Error('page did not render');
+  const pretty=g.replace(/></g,'>\n<');const sv=D.html[PRO];M[PK]={orig:pretty,cur:sv!=null?sv:pretty,saved:sv!=null?sv:pretty};fr.remove()}catch(e){msg('Could not read page HTML for "'+PRO+'": '+e.message,'err');M[PK]={orig:'',cur:'',saved:''}}
+ $('#gtm').value=D.gtm||'';$('#back').href='../'+PRO;reg();open(PK);status();if(bundled)msg('Opened without a web server: using bundled copies of the original files (fine for editing; saved edits still apply to the site).','warn')})();
+})();
+</script></body></html>
